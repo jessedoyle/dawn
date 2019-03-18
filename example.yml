@@ -1,0 +1,133 @@
+name: dev-setup
+version: 2019-03-16
+
+parameters:
+  - name: username
+    description: The system username
+    type: string
+    short: '-uUSERNAME'
+    long: '--username=USERNAME'
+    required: true
+
+actions:
+  - description: Update OS X and Software
+    flag: softwareupdate
+    type: shell
+    up: softwareupdate --install --recommended --all
+    down: echo 'Software updates are not reversible'
+    test: exit 1 # always execute
+    user: root
+  - description: Enable Filevault Encryption
+    flag: filevault
+    type: shell
+    up: fdesetup enable -user ${parameters:username}
+    down: fdesetup disable -user ${parameters:username}
+    test: fdesetup status | grep -i 'FileVault is On'
+    user: root
+  - description: Install XCode Command Line Tools
+    flag: xcodecli
+    type: shell
+    up: >
+      softwareupdate --reset-ignored;
+      xcode-select --install;
+      softwareupdate -i "$(softwareupdate -l | grep '*.*Command Line' | head -n 1 | awk -F'*' '{print $2}' | sed -e 's/^ *//' | tr -d '\n')"
+    down: sudo rm -rf /Library/Developer/CommandLineTools
+    test: xcode-select -p
+  - description: Enable Slow-mo Animations
+    flag: slowmo
+    type: shell
+    up: defaults write com.apple.dock slow-motion-allowed -bool YES && killall Dock
+    down: defaults write com.apple.dock slow-motion-allowed -bool NO && killall Dock
+    test: defaults read com.apple.dock slow-motion-allowed | grep 1
+  - description: Show Battery Percentage
+    flag: batterypercentage
+    type: shell
+    up: defaults write com.apple.menuextra.battery ShowPercent -bool YES && killall SystemUIServer
+    down: defaults write com.apple.menuextra.battery ShowPercent -bool NO && killall SystemUIServer
+    test: defaults read com.apple.menuextra.battery ShowPercent | grep 1
+  - description: Map CapsLock to Esc
+    flag: capslocktoesc
+    type: shell
+    up: hidutil property --set '{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x700000039,"HIDKeyboardModifierMappingDst":0x700000029}]}'
+    down: hidutil property --set '{"UserKeyMapping":[]}'
+    test: hidutil property --get UserKeyMapping | grep -e 'HIDKeyboardModifierMappingDst = 30064771113' -e 'HIDKeyboardModifierMappingSrc = 30064771129'
+  - description: Create a Vim Init File
+    flag: vimrc
+    type: file
+    content: |
+      syntax on
+      autocmd Filetype gitcommit setlocal spell textwidth=72
+    path: ~/.vimrc
+    permissions: 0644
+  - description: Install Homebrew
+    flag: homebrew-install
+    type: shell
+    up: /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    down: /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/uninstall)"
+    test: which brew
+  - description: Create a Source Directory
+    flag: srcdirectory
+    type: shell
+    up: mkdir ~/src
+    down: rm -rf ~/src
+    test: "file ~/src | grep 'src: directory'"
+  - description: Generate Base Brewfile
+    flag: brewfile-base
+    type: file
+    content: |
+      tap "homebrew/cask"
+      tap "aws/tap"
+      brew "git"
+      brew "gnupg"
+      brew "redis"
+      brew "python3"
+      brew "pipenv"
+      brew "rbenv"
+      brew "postgresql"
+      brew "node"
+      brew "yarn"
+      brew "nvm"
+      brew "fortune"
+      brew "flow"
+      brew "watchman"
+      brew "awscli"
+      brew "aws-sam-cli"
+      brew "pow"
+      brew "terraform"
+      brew "ansible"
+      cask "atom"
+      cask "visual-studio-code"
+      cask "react-native-debugger"
+      cask "gitify"
+      cask "docker"
+      cask "postman"
+      cask "slack"
+      cask "android-studio"
+      cask "iterm2"
+      cask "dropbox"
+    path: '~/src/Brewfile'
+    permissions: 0644
+  - description: Install Homebrew Dependencies
+    flag: homebrew-dependencies
+    type: shell
+    up: brew bundle install --file=/Users/${parameters:username}/src/Brewfile
+    down: brew bundle cleanup --file=/Users/${parameters:username}/src/Brewfile
+    test: brew bundle check --file=/Users/${parameters:username}/src/Brewfile
+  - description: Enable Homebrew Services
+    flag: homebrew-services
+    type: shell
+    up: >
+      brew services start redis;
+      brew services start postgresql;
+    down: >
+      brew services stop redis;
+      brew services stop postgresql;
+    test: >
+      brew services list | grep redis | awk '{print $2}' | grep started &&
+      brew services list | grep postgresql | awk '{print $2}' | grep started
+  - description: Install Oh My Zsh
+    flag: ohmyzsh
+    type: shell
+    up: sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+    down: sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/uninstall.sh)"
+    test: "file ~/.oh-my-zsh | grep 'oh-my-zsh: directory'"
