@@ -45,12 +45,6 @@ actions:
     up: defaults write com.apple.menuextra.battery ShowPercent -bool YES && killall SystemUIServer
     down: defaults write com.apple.menuextra.battery ShowPercent -bool NO && killall SystemUIServer
     test: defaults read com.apple.menuextra.battery ShowPercent | grep 1
-  - description: Map CapsLock to Esc
-    flag: capslocktoesc
-    type: shell
-    up: hidutil property --set '{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x700000039,"HIDKeyboardModifierMappingDst":0x700000029}]}'
-    down: hidutil property --set '{"UserKeyMapping":[]}'
-    test: hidutil property --get UserKeyMapping | grep -e 'HIDKeyboardModifierMappingDst = 30064771113' -e 'HIDKeyboardModifierMappingSrc = 30064771129'
   - description: Create a Vim Init File
     flag: vimrc
     type: file
@@ -77,6 +71,7 @@ actions:
     content: |
       tap "homebrew/cask"
       tap "aws/tap"
+      tap "caskroom/versions"
       brew "git"
       brew "gnupg"
       brew "redis"
@@ -105,6 +100,9 @@ actions:
       cask "android-studio"
       cask "iterm2"
       cask "dropbox"
+      cask "java8"
+      cask "microsoft-office"
+      cask "lastpass"
     path: '~/src/Brewfile'
     permissions: 0644
   - description: Install Homebrew Dependencies
@@ -131,3 +129,11 @@ actions:
     up: sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
     down: sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/uninstall.sh)"
     test: "file ~/.oh-my-zsh | grep 'oh-my-zsh: directory'"
+  # NOTE: The following action may error until android stuido has been opened and installation
+  # has been completed
+  - description: Accept Android SDK Licenses
+    flag: android/licenses
+    type: shell
+    up: yes | sudo /Users/${parameters:username}/Library/Android/sdk/tools/bin/sdkmanager --licenses
+    down: echo 'Cannot undo android license acceptance'
+    test: exit 1 # always run
