@@ -102,7 +102,9 @@ actions:
       cask "dropbox"
       cask "java8"
       cask "microsoft-office"
+      cask "microsoft-teams"
       cask "lastpass"
+      cask "google-chrome"
     path: '~/src/Brewfile'
     permissions: 0644
   - description: Install Homebrew Dependencies
