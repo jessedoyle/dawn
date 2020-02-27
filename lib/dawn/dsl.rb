@@ -8,7 +8,11 @@ module Dawn
       data = log_file.exist? ? JSON.parse(log_file.read) : {}
       data[flag] ||= []
       data[flag].push(opts.merge(timestamp: Time.now.iso8601))
-      File.open(log_file.to_s, 'w') { |f| f.write(data.to_json) }
+      File.open(log_file.to_s, 'w') { |f| f.write(JSON.pretty_generate(data)) }
+    rescue JSON::ParserError => e
+      puts flag.to_s
+      puts e
+      raise
     end
 
     private

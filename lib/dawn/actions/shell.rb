@@ -12,7 +12,7 @@ module Dawn
         test
       ].freeze
       PARAMETERS = (OPTIONAL_PARAMETERS | REQUIRED_PARAMETERS).freeze
-      
+
       attr_accessor(*PARAMETERS)
 
       def initialize(opts = {})
@@ -27,12 +27,12 @@ module Dawn
 
       def execute!(opts = {})
         direction = opts.fetch(:direction) { :up }
-        puts "=== #{description} | #{direction.capitalize}"
+        puts "\n=== #{description} | #{direction.capitalize} ==="
         as_user do |test_command, up_command, down_command|
           present = shell(test_command, throw: false).success?
           if direction == :up
             if present
-              puts "action:skip  -- #{up}"
+              puts "action:skip  -- #{up}\n"
             else
               shell(up_command)
             end
@@ -40,7 +40,7 @@ module Dawn
             if present
               shell(down_command)
             else
-              puts "action:skip  -- #{down}"
+              puts "action:skip  -- #{down}\n"
             end
           end
         end
@@ -77,7 +77,8 @@ module Dawn
           status: status.exitstatus
         }
         Dawn.log(flag, data)
-        raise Exceptions::CommandFailed, data.to_json if !status.success? && throw
+        raise Exceptions::CommandFailed, JSON.pretty_generate(data) if !status.success? && throw
+
         status
       end
     end
