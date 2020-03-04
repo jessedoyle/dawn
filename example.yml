@@ -79,8 +79,8 @@ actions:
     content: |
       tap "homebrew/cask"
       tap "aws/tap"
-      tap "caskroom/versions"
-      tap "cartr/qt4", pin: true
+      tap "homebrew/cask-versions"
+      tap "cartr/qt4"
       brew "git"
       brew "gnupg"
       brew "redis"
