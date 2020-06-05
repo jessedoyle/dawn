@@ -89,6 +89,7 @@ actions:
       brew "cookiecutter"
       brew "rbenv"
       brew "postgresql"
+      brew "nginx"
       brew "node"
       brew "yarn"
       brew "nvm"
@@ -157,3 +158,45 @@ actions:
     up: yes | sudo /Users/${parameters:username}/Library/Android/sdk/tools/bin/sdkmanager --licenses
     down: echo 'Cannot undo android license acceptance'
     test: exit 1 # always run
+
+  - description: update pow for modern node
+    flag: pow/node
+    type: shell
+    up: sed -i '' 's/util.puts/console.log/g' /usr/local/Cellar/pow/0.6.0/libexec/lib/*.js
+    down: sed -i '' 's/console.log/util.puts/g' /usr/local/Cellar/pow/0.6.0/libexec/lib/*.js
+    test: exit 1 # always run
+
+  - description: git clone powprox
+    flag: powprox/clone
+    type: shell
+    up: cd ~/src && git clone git@github.com:basecamp/powprox.git
+    down: rm -fR ~/src/powprox
+    test: "file ~/src/powprox | grep 'powprox: directory'"
+
+  - description: set up powprox
+    flag: powprox/config
+    type: shell
+    up: cd ~/src/powprox && bin/powprox
+    down: rm -fR ~/src/.powprox
+    test: "file ~/.powprox | grep '.powprox: directory'"
+
+  - description: trust powprox ssl cert
+    flag: powprox/trustcert
+    type: shell
+    up: sudo security add-trusted-cert -d -r trustAsRoot -k /Library/Keychains/System.keychain  ~/.powprox/ssl/certs/pow-server.crt
+    down: sudo security delete-certificate -c 'Pow development root' -t
+    test: "security find-certificate -c 'Pow development root' | grep 'Pow development root'"
+
+  - description: add powprox certs to openssl 1.1
+    flag: powprox/openssl1.0
+    type: shell
+    up: mkdir -p /usr/local/opt/openssl@1.1/certs && cp ~/.powprox/ssl/certs/*.pem /usr/local/opt/openssl@1.1/certs && /usr/local/opt/openssl/bin/c_rehash
+    down: rm /usr/local/opt/openssl@1.1/certs/*.pem && /usr/local/opt/openssl@1.0/bin/c_rehash
+    test: "file /usr/local/opt/openssl@1.1 | grep 'No such file or directory'"
+
+  - description: add powprox certs to openssl 1.0
+    flag: powprox/openssl1.0
+    type: shell
+    up: mkdir -p /usr/local/opt/openssl/certs && cp ~/.powprox/ssl/certs/*.pem /usr/local/opt/openssl/certs && /usr/local/opt/openssl@1.0/bin/c_rehash
+    down: rm /usr/local/opt/openssl/certs/*.pem && /usr/local/opt/openssl@1.0/bin/c_rehash
+    test: "file /usr/local/opt/openssl@1.0 | grep 'No such file or directory'"
