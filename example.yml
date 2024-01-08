@@ -10,46 +10,6 @@ parameters:
     required: true
 
 actions:
-  - description: Update OS X and Software
-    flag: softwareupdate
-    type: shell
-    up: softwareupdate --install --recommended --all
-    down: echo 'Software updates are not reversible'
-    test: exit 1 # always execute
-    user: root
-
-  - description: Enable Filevault Encryption
-    flag: filevault
-    type: shell
-    up: fdesetup enable -user ${parameters:username}
-    down: fdesetup disable -user ${parameters:username}
-    test: fdesetup status | grep -i 'FileVault is On'
-    user: root
-
-  - description: Install XCode Command Line Tools
-    flag: xcodecli
-    type: shell
-    up: >
-      softwareupdate --reset-ignored;
-      xcode-select --install;
-      softwareupdate -i "$(softwareupdate -l | grep '*.*Command Line' | head -n 1 | awk -F'*' '{print $2}' | sed -e 's/^ *//' | tr -d '\n')"
-    down: sudo rm -rf /Library/Developer/CommandLineTools
-    test: xcode-select -p
-
-  - description: Enable Slow-mo Animations
-    flag: slowmo
-    type: shell
-    up: defaults write com.apple.dock slow-motion-allowed -bool YES && killall Dock
-    down: defaults write com.apple.dock slow-motion-allowed -bool NO && killall Dock
-    test: defaults read com.apple.dock slow-motion-allowed | grep 1
-
-  - description: Show Battery Percentage
-    flag: batterypercentage
-    type: shell
-    up: defaults write com.apple.menuextra.battery ShowPercent -bool YES && killall SystemUIServer
-    down: defaults write com.apple.menuextra.battery ShowPercent -bool NO && killall SystemUIServer
-    test: defaults read com.apple.menuextra.battery ShowPercent | grep 1
-
   - description: Create a Vim Init File
     flag: vimrc
     type: file
@@ -77,10 +37,6 @@ actions:
     flag: brewfile-base
     type: file
     content: |
-      tap "homebrew/cask"
-      tap "aws/tap"
-      tap "homebrew/cask-versions"
-      tap "cartr/qt4"
       brew "git"
       brew "gnupg"
       brew "redis"
@@ -92,33 +48,20 @@ actions:
       brew "node"
       brew "yarn"
       brew "nvm"
-      brew "fortune"
       brew "flow"
       brew "watchman"
       brew "awscli"
       brew "aws-sam-cli"
-      brew "pow"
       brew "terraform"
       brew "ansible"
-      brew "qt@4"
-      brew "qt-webkit@2.3"
-      cask "atom"
       cask "clipy"
       cask "coconutbattery"
-      cask "dash"
       cask "visual-studio-code"
       cask "react-native-debugger"
       cask "gitify"
       cask "docker"
       cask "postman"
-      cask "slack"
-      cask "android-studio"
       cask "iterm2"
-      cask "dropbox"
-      cask "homebrew/cask-versions/adoptopenjdk8"
-      cask "microsoft-office"
-      cask "microsoft-teams"
-      cask "google-chrome"
     path: '~/src/Brewfile'
     permissions: 0644
 
@@ -150,10 +93,3 @@ actions:
     test: "file ~/.oh-my-zsh | grep 'oh-my-zsh: directory'"
   # NOTE: The following action may error until android stuido has been opened and installation
   # has been completed
-
-  - description: Accept Android SDK Licenses
-    flag: android/licenses
-    type: shell
-    up: yes | sudo /Users/${parameters:username}/Library/Android/sdk/tools/bin/sdkmanager --licenses
-    down: echo 'Cannot undo android license acceptance'
-    test: exit 1 # always run
